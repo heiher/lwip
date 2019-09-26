@@ -384,7 +384,7 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
        * or for a pcb that has been used and then entered the CLOSED state
        * is erroneous, but this should never happen as the pcb has in those cases
        * been freed, and so any remaining handles are bogus. */
-      if (pcb->local_port != 0) {
+      if ((pcb->local_port != 0) || (pcb->pretend_netif_idx != NETIF_NO_INDEX)) {
         TCP_RMV(&tcp_bound_pcbs, pcb);
       }
       tcp_free(pcb);
@@ -592,7 +592,7 @@ tcp_abandon(struct tcp_pcb *pcb, int reset)
 #endif /* LWIP_CALLBACK_API */
     errf_arg = pcb->callback_arg;
     if (pcb->state == CLOSED) {
-      if (pcb->local_port != 0) {
+      if ((pcb->local_port != 0) || (pcb->pretend_netif_idx != NETIF_NO_INDEX)) {
         /* bound, not yet opened */
         TCP_RMV(&tcp_bound_pcbs, pcb);
       }
@@ -669,6 +669,22 @@ tcp_bind(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
 
   LWIP_ASSERT_CORE_LOCKED();
 
+  /* Check if the pretend already is in use (on all lists) */
+  for (i = 0; i < NUM_TCP_PCB_LISTS; i++) {
+    for (cpcb = *tcp_pcb_lists[i]; cpcb; cpcb = cpcb->next) {
+      if (cpcb->pretend_netif_idx == pcb->netif_idx)
+        return ERR_USE;
+    }
+  }
+
+  if ((ipaddr == NULL) && (port == 0) && (pcb->netif_idx != NETIF_NO_INDEX)) {
+    struct netif *netif = netif_get_by_index(pcb->netif_idx);
+    if (netif_is_flag_set(netif, NETIF_FLAG_PRETEND_TCP)) {
+      pcb->pretend_netif_idx = pcb->netif_idx;
+      goto done;
+    }
+  }
+
 #if LWIP_IPV4
   /* Don't propagate NULL pointer (IPv4 ANY) to subsequent functions */
   if (ipaddr == NULL) {
@@ -743,6 +759,7 @@ tcp_bind(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
      ) {
     ip_addr_set(&pcb->local_ip, ipaddr);
   }
+done:
   pcb->local_port = port;
   TCP_REG(&tcp_bound_pcbs, pcb);
   LWIP_DEBUGF(TCP_DEBUG, ("tcp_bind: bind to port %"U16_F"\n", port));
@@ -890,13 +907,14 @@ tcp_listen_with_backlog_and_err(struct tcp_pcb *pcb, u8_t backlog, err_t *err)
   lpcb->prio = pcb->prio;
   lpcb->so_options = pcb->so_options;
   lpcb->netif_idx = NETIF_NO_INDEX;
+  lpcb->pretend_netif_idx = pcb->pretend_netif_idx;
   lpcb->ttl = pcb->ttl;
   lpcb->tos = pcb->tos;
 #if LWIP_IPV4 && LWIP_IPV6
   IP_SET_TYPE_VAL(lpcb->remote_ip, pcb->local_ip.type);
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
   ip_addr_copy(lpcb->local_ip, pcb->local_ip);
-  if (pcb->local_port != 0) {
+  if ((pcb->local_port != 0) || (pcb->pretend_netif_idx != NETIF_NO_INDEX)) {
     TCP_RMV(&tcp_bound_pcbs, pcb);
   }
 #if LWIP_TCP_PCB_NUM_EXT_ARGS

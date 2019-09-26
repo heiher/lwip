@@ -371,7 +371,7 @@ return_noroute:
 
 /** Return true if the current input packet should be accepted on this netif */
 static int
-ip4_input_accept(struct netif *netif)
+ip4_input_accept(struct netif *netif, const struct ip_hdr *iphdr)
 {
   LWIP_DEBUGF(IP_DEBUG, ("ip_input: iphdr->dest 0x%"X32_F" netif->ip_addr 0x%"X32_F" (0x%"X32_F", 0x%"X32_F", 0x%"X32_F")\n",
                          ip4_addr_get_u32(ip4_current_dest_addr()), ip4_addr_get_u32(netif_ip4_addr(netif)),
@@ -388,6 +388,7 @@ ip4_input_accept(struct netif *netif)
 #if LWIP_NETIF_LOOPBACK && !LWIP_HAVE_LOOPIF
         || (ip4_addr_get_u32(ip4_current_dest_addr()) == PP_HTONL(IPADDR_LOOPBACK))
 #endif /* LWIP_NETIF_LOOPBACK && !LWIP_HAVE_LOOPIF */
+        || (netif_is_flag_set(netif, NETIF_FLAG_PRETEND_TCP) && (IPH_PROTO(iphdr) == IP_PROTO_TCP))
        ) {
       LWIP_DEBUGF(IP_DEBUG, ("ip4_input: packet accepted on interface %c%c\n",
                              netif->name[0], netif->name[1]));
@@ -540,7 +541,7 @@ ip4_input(struct pbuf *p, struct netif *inp)
   } else {
     /* start trying with inp. if that's not acceptable, start walking the
        list of configured netifs. */
-    if (ip4_input_accept(inp)) {
+    if (ip4_input_accept(inp, iphdr)) {
       netif = inp;
     } else {
       netif = NULL;
@@ -557,7 +558,7 @@ ip4_input(struct pbuf *p, struct netif *inp)
             /* we checked that before already */
             continue;
           }
-          if (ip4_input_accept(netif)) {
+          if (ip4_input_accept(netif, iphdr)) {
             break;
           }
         }

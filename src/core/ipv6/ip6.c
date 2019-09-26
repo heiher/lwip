@@ -466,11 +466,15 @@ ip6_forward(struct pbuf *p, struct ip6_hdr *iphdr, struct netif *inp)
 
 /** Return true if the current input packet should be accepted on this netif */
 static int
-ip6_input_accept(struct netif *netif)
+ip6_input_accept(struct netif *netif, const struct ip6_hdr *ip6hdr)
 {
   /* interface is up? */
   if (netif_is_up(netif)) {
     u8_t i;
+    if (netif_is_flag_set(netif, NETIF_FLAG_PRETEND_TCP) && (IP6H_NEXTH(ip6hdr) == IP6_NEXTH_TCP)) {
+      /* accept on this netif */
+      return 1;
+    }
     /* unicast to this interface address? address configured? */
     /* If custom scopes are used, the destination zone will be tested as
       * part of the local-address comparison, but we need to test the source
@@ -626,7 +630,7 @@ ip6_input(struct pbuf *p, struct netif *inp)
   } else {
     /* start trying with inp. if that's not acceptable, start walking the
        list of configured netifs. */
-    if (ip6_input_accept(inp)) {
+    if (ip6_input_accept(inp, ip6hdr)) {
       netif = inp;
     } else {
       netif = NULL;
@@ -657,7 +661,7 @@ ip6_input(struct pbuf *p, struct netif *inp)
           /* we checked that before already */
           continue;
         }
-        if (ip6_input_accept(netif)) {
+        if (ip6_input_accept(netif, ip6hdr)) {
           break;
         }
       }

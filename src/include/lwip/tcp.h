@@ -215,6 +215,7 @@ typedef u16_t tcpflags_t;
   TCP_PCB_EXTARGS \
   enum tcp_state state; /* TCP state */ \
   u8_t prio; \
+  u8_t pretend_netif_idx; \
   /* ports are in host byte order */ \
   u16_t local_port
 

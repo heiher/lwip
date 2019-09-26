@@ -323,7 +323,13 @@ tcp_input(struct pbuf *p, struct netif *inp)
         continue;
       }
 
-      if (lpcb->local_port == tcphdr->dest) {
+      /* check if PCB is pretend for specific netif */
+      if ((lpcb->pretend_netif_idx != NETIF_NO_INDEX) &&
+          (lpcb->pretend_netif_idx == netif_get_index(inp))) {
+        if (IP_ADDR_PCB_VERSION_MATCH(lpcb, ip_current_dest_addr())) {
+          break;
+        }
+      } else if (lpcb->local_port == tcphdr->dest) {
         if (IP_IS_ANY_TYPE_VAL(lpcb->local_ip)) {
           /* found an ANY TYPE (IPv4/IPv6) match */
 #if SO_REUSE
@@ -675,7 +681,7 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
     /* Set up the new PCB. */
     ip_addr_copy(npcb->local_ip, *ip_current_dest_addr());
     ip_addr_copy(npcb->remote_ip, *ip_current_src_addr());
-    npcb->local_port = pcb->local_port;
+    npcb->local_port = tcphdr->dest;
     npcb->remote_port = tcphdr->src;
     npcb->state = SYN_RCVD;
     npcb->rcv_nxt = seqno + 1;
