@@ -353,6 +353,14 @@
 
 #define LWIP_LISTEN_BACKLOG             0
 
+/**
+ * TCP_MSS: TCP Maximum segment size.
+ * For the receive side, this MSS is advertised to the remote side
+ * when opening a connection. For the transmit size, this MSS sets
+ * an upper limit on the MSS advertised by the remote host.
+ */
+#define TCP_MSS                         10000
+
 /*
    ----------------------------------
    ---------- Pbuf options ----------
