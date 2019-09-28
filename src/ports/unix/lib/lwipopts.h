@@ -361,6 +361,12 @@
  */
 #define TCP_MSS                         10000
 
+/**
+ * TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
+ * as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work.
+ */
+#define TCP_SND_QUEUELEN                ((8 * (TCP_SND_BUF) + (TCP_MSS - 1))/(TCP_MSS))
+
 /*
    ----------------------------------
    ---------- Pbuf options ----------
