@@ -105,9 +105,11 @@ extern "C" {
 /** If set, the netif has MLD6 capability.
  * Set by the netif driver in its init function. */
 #define NETIF_FLAG_MLD6         0x40U
-/** If set, the netif to pretend that every host for TCP packets.
+/** If set, the netif to pretend that every host for TCP and UDP packets.
  * Set by the netif driver in its set flags function. */
-#define NETIF_FLAG_PRETEND_TCP  0x80U
+#define NETIF_FLAG_PRETEND      0x80U
+#define NETIF_FLAG_PRETEND_TCP  NETIF_FLAG_PRETEND
+#define NETIF_FLAG_PRETEND_UDP  NETIF_FLAG_PRETEND
 
 /**
  * @}

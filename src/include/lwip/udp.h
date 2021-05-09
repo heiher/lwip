@@ -87,6 +87,7 @@ struct udp_pcb {
   struct udp_pcb *next;
 
   u8_t flags;
+  u8_t pretend_netif_idx;
   /** ports are in host byte order */
   u16_t local_port, remote_port;
 
@@ -133,6 +134,8 @@ err_t            udp_sendto_if  (struct udp_pcb *pcb, struct pbuf *p,
 err_t            udp_sendto_if_src(struct udp_pcb *pcb, struct pbuf *p,
                                  const ip_addr_t *dst_ip, u16_t dst_port,
                                  struct netif *netif, const ip_addr_t *src_ip);
+err_t            udp_sendfrom   (struct udp_pcb *pcb, struct pbuf *p,
+                                 const ip_addr_t *src_ip, u16_t src_port);
 err_t            udp_sendto     (struct udp_pcb *pcb, struct pbuf *p,
                                  const ip_addr_t *dst_ip, u16_t dst_port);
 err_t            udp_send       (struct udp_pcb *pcb, struct pbuf *p);

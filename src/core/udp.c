@@ -243,6 +243,7 @@ udp_input(struct pbuf *p, struct netif *inp)
   ip_addr_debug_print_val(UDP_DEBUG, *ip_current_src_addr());
   LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F")\n", lwip_ntohs(udphdr->src)));
 
+again:
   pcb = NULL;
   prev = NULL;
   uncon_pcb = NULL;
@@ -257,6 +258,14 @@ udp_input(struct pbuf *p, struct netif *inp)
     LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F") <-- (", pcb->local_port));
     ip_addr_debug_print_val(UDP_DEBUG, pcb->remote_ip);
     LWIP_DEBUGF(UDP_DEBUG, (", %"U16_F")\n", pcb->remote_port));
+
+    if (pcb->pretend_netif_idx != NETIF_NO_INDEX) {
+      if ((pcb->remote_port == src) && ip_addr_cmp(&pcb->remote_ip, ip_current_src_addr())) {
+        break;
+      }
+      prev = pcb;
+      continue;
+    }
 
     /* compare PCB local addr+port to UDP destination addr+port */
     if ((pcb->local_port == dest) &&
@@ -389,7 +398,7 @@ udp_input(struct pbuf *p, struct netif *inp)
               if (mpcb->recv != NULL) {
                 struct pbuf *q;
                 q = pbuf_clone(PBUF_RAW, PBUF_POOL, p);
-                if (q != NULL) {
+                if ((q != NULL) && (pcb->pretend_netif_idx == NETIF_NO_INDEX)) {
                   mpcb->recv(mpcb->recv_arg, mpcb, q, ip_current_src_addr(), src);
                 }
               }
@@ -401,7 +410,23 @@ udp_input(struct pbuf *p, struct netif *inp)
       /* callback */
       if (pcb->recv != NULL) {
         /* now the recv function is responsible for freeing p */
-        pcb->recv(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
+        if (pcb->pretend_netif_idx != NETIF_NO_INDEX) {
+          ip_addr_t addr;
+          u16_t port;
+
+          ip_addr_set_ipaddr(&addr, &pcb->local_ip);
+          port = pcb->local_port;
+
+          ip_addr_set_ipaddr(&pcb->local_ip, ip_current_dest_addr());
+          pcb->local_port = dest;
+
+          pcb->recv(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
+
+          ip_addr_set_ipaddr(&pcb->local_ip, &addr);
+          pcb->local_port = port;
+        } else {
+          pcb->recv(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
+        }
       } else {
         /* no recv function registered? then we have to free the pbuf! */
         pbuf_free(p);
@@ -425,6 +450,28 @@ udp_input(struct pbuf *p, struct netif *inp)
       pbuf_free(p);
     }
   } else {
+    for (pcb = udp_pcbs; pcb != NULL; pcb = pcb->next) {
+      /* check if PCB is pretend for specific netif */
+      if ((pcb->pretend_netif_idx != NETIF_NO_INDEX) &&
+          (pcb->pretend_netif_idx == netif_get_index(inp)) &&
+          ((pcb->flags & UDP_FLAGS_CONNECTED) == 0) &&
+          (pcb->recv != NULL) &&
+          IP_ADDR_PCB_VERSION_MATCH(pcb, ip_current_dest_addr())) {
+        struct udp_pcb *npcb = udp_new_ip_type(pcb->local_ip.type);
+        if (npcb != NULL) {
+          ip_addr_set_ipaddr(&npcb->remote_ip, ip_current_src_addr());
+          npcb->remote_port = src;
+          npcb->flags |= UDP_FLAGS_CONNECTED;
+          npcb->pretend_netif_idx = pcb->pretend_netif_idx;
+          npcb->next = udp_pcbs;
+          udp_pcbs = npcb;
+          pcb->recv(pcb->recv_arg, npcb, NULL, NULL, 0);
+          goto again;
+        }
+        break;
+      }
+    }
+
     pbuf_free(p);
   }
 end:
@@ -497,6 +544,43 @@ udp_send_chksum(struct udp_pcb *pcb, struct pbuf *p,
                            have_chksum, chksum);
 }
 #endif /* LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_UDP */
+
+/**
+ * @ingroup udp_raw
+ * Send data from a specified address using UDP.
+ *
+ * @param pcb UDP PCB used to send the data.
+ * @param p chain of pbuf's to be sent.
+ * @param src_ip Source IP address.
+ * @param src_port Source UDP port.
+ *
+ * src_ip & src_port are expected to be in the same byte order as in the pcb.
+ *
+ * @return lwIP error code (@see udp_send for possible error codes)
+ *
+ * @see udp_disconnect() udp_send()
+ */
+err_t
+udp_sendfrom(struct udp_pcb *pcb, struct pbuf *p,
+             const ip_addr_t *src_ip, u16_t src_port)
+{
+  err_t err;
+  ip_addr_t addr;
+  u16_t port;
+
+  ip_addr_set_ipaddr(&addr, &pcb->local_ip);
+  port = pcb->local_port;
+
+  ip_addr_set_ipaddr(&pcb->local_ip, src_ip);
+  pcb->local_port = src_port;
+
+  err = udp_send(pcb, p);
+
+  ip_addr_set_ipaddr(&pcb->local_ip, &addr);
+  pcb->local_port = port;
+
+  return err;
+}
 
 /**
  * @ingroup udp_raw
@@ -658,7 +742,7 @@ udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_i
       }
     } else {
       /* use UDP PCB local IPv6 address as source address, if still valid. */
-      if (netif_get_ip6_addr_match(netif, ip_2_ip6(&pcb->local_ip)) < 0) {
+      if (!netif_is_flag_set(netif, NETIF_FLAG_PRETEND_UDP) && netif_get_ip6_addr_match(netif, ip_2_ip6(&pcb->local_ip)) < 0) {
         /* Address isn't valid anymore. */
         return ERR_RTE;
       }
@@ -678,7 +762,7 @@ udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_i
     } else {
       /* check if UDP PCB local IP address is correct
        * this could be an old address if netif->ip_addr has changed */
-      if (!ip4_addr_cmp(ip_2_ip4(&(pcb->local_ip)), netif_ip4_addr(netif))) {
+      if (!netif_is_flag_set(netif, NETIF_FLAG_PRETEND_UDP) && !ip4_addr_cmp(ip_2_ip4(&(pcb->local_ip)), netif_ip4_addr(netif))) {
         /* local_ip doesn't match, drop the packet */
         return ERR_RTE;
       }
@@ -932,12 +1016,27 @@ err_t
 udp_bind(struct udp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
 {
   struct udp_pcb *ipcb;
-  u8_t rebind;
+  u8_t rebind = 0;
 #if LWIP_IPV6 && LWIP_IPV6_SCOPES
   ip_addr_t zoned_ipaddr;
 #endif /* LWIP_IPV6 && LWIP_IPV6_SCOPES */
 
   LWIP_ASSERT_CORE_LOCKED();
+
+  /* Check if the pretend already is in use (on all lists) */
+  for (ipcb = udp_pcbs; ipcb != NULL; ipcb = ipcb->next) {
+    if (ipcb->pretend_netif_idx == pcb->netif_idx) {
+      return ERR_USE;
+    }
+  }
+
+  if ((ipaddr == NULL) && (port == 0) && (pcb->netif_idx != NETIF_NO_INDEX)) {
+    struct netif *netif = netif_get_by_index(pcb->netif_idx);
+    if (netif_is_flag_set(netif, NETIF_FLAG_PRETEND_UDP)) {
+      pcb->pretend_netif_idx = pcb->netif_idx;
+      goto done;
+    }
+  }
 
 #if LWIP_IPV4
   /* Don't propagate NULL pointer (IPv4 ANY) to subsequent functions */
@@ -954,7 +1053,6 @@ udp_bind(struct udp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
   ip_addr_debug_print(UDP_DEBUG | LWIP_DBG_TRACE, ipaddr);
   LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, (", port = %"U16_F")\n", port));
 
-  rebind = 0;
   /* Check for double bind and rebind of the same pcb */
   for (ipcb = udp_pcbs; ipcb != NULL; ipcb = ipcb->next) {
     /* is this UDP PCB already on active list? */
@@ -1012,6 +1110,7 @@ udp_bind(struct udp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
 
   ip_addr_set_ipaddr(&pcb->local_ip, ipaddr);
 
+done:
   pcb->local_port = port;
   mib2_udp_bind(pcb);
   /* pcb not active yet? */
