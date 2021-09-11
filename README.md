@@ -100,6 +100,7 @@ udp_recv_handler (void *arg, struct udp_pcb *pcb, struct pbuf *p,
 
     // Send with source address
     udp_sendfrom (pcb, p, real_src_ip, real_src_port);
+    pbuf_free (p);
 }
 ```
 
