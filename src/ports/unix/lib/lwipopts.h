@@ -84,6 +84,15 @@
  */
 #define MEM_LIBC_MALLOC                 1
 
+void hev_free (void *ptr);
+#define mem_clib_free hev_free
+
+void *hev_malloc (size_t size);
+#define mem_clib_malloc hev_malloc
+
+void *hev_calloc (size_t nmemb, size_t size);
+#define mem_clib_calloc hev_calloc
+
 /*
    ------------------------------------------------
    ---------- Internal Memory Pool Sizes ----------
