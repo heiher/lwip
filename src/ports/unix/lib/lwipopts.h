@@ -368,7 +368,7 @@ void *hev_calloc (size_t nmemb, size_t size);
  * when opening a connection. For the transmit size, this MSS sets
  * an upper limit on the MSS advertised by the remote host.
  */
-#define TCP_MSS                         10000
+#define TCP_MSS                         2048
 
 /**
  * TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
