@@ -185,7 +185,7 @@ void *hev_calloc (size_t nmemb, size_t size);
 /**
  * PBUF_POOL_SIZE: the number of buffers in the pbuf pool.
  */
-#define PBUF_POOL_SIZE                  8
+#define PBUF_POOL_SIZE                  32
 
 /*
    ---------------------------------
@@ -369,6 +369,15 @@ void *hev_calloc (size_t nmemb, size_t size);
  * an upper limit on the MSS advertised by the remote host.
  */
 #define TCP_MSS                         2048
+
+/**
+ * TCP_WND: The size of a TCP window.  This must be at least
+ * (2 * TCP_MSS) for things to work well.
+ * ATTENTION: when using TCP_RCV_SCALE, TCP_WND is the total size
+ * with scaling applied. Maximum window value in the TCP header
+ * will be TCP_WND >> TCP_RCV_SCALE
+ */
+#define TCP_WND                         (16 * TCP_MSS)
 
 /**
  * TCP_SND_BUF: TCP sender buffer space (bytes).
