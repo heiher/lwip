@@ -371,6 +371,12 @@ void *hev_calloc (size_t nmemb, size_t size);
 #define TCP_MSS                         2048
 
 /**
+ * TCP_SND_BUF: TCP sender buffer space (bytes).
+ * To achieve good performance, this should be at least 2 * TCP_MSS.
+ */
+#define TCP_SND_BUF                     (16 * TCP_MSS)
+
+/**
  * TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
  * as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work.
  */
