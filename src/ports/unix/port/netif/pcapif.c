@@ -30,7 +30,7 @@
  *
  */
 
-#ifndef linux  /* Apparently, this doesn't work under Linux. */
+#if !defined(linux) && !defined(__MACH__)  /* Apparently, this doesn't work under Linux and MacOS. */
 
 #include "lwip/debug.h"
 
@@ -204,4 +204,4 @@ pcapif_init(struct netif *netif)
   return ERR_OK;
 }
 /*-----------------------------------------------------------------------------------*/
-#endif /* linux */
+#endif /* linux & macos */
