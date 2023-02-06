@@ -491,6 +491,12 @@ void *hev_calloc (size_t nmemb, size_t size);
  */
 #define CHECKSUM_CHECK_ICMP6            0
 
+/**
+ * LWIP_CHECKSUM_ON_COPY==1: Calculate checksum when copying data from
+ * application buffers to pbufs.
+ */
+#define LWIP_CHECKSUM_ON_COPY           1
+
 /*
    ---------------------------------------
    ---------- Threading options ----------
