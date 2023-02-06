@@ -360,8 +360,6 @@ void *hev_calloc (size_t nmemb, size_t size);
  */
 #define LWIP_TCP                        1
 
-#define LWIP_LISTEN_BACKLOG             0
-
 /**
  * TCP_MSS: TCP Maximum segment size.
  * For the receive side, this MSS is advertised to the remote side
@@ -456,17 +454,6 @@ void *hev_calloc (size_t nmemb, size_t size);
  * LWIP_STATS==1: Enable statistics collection in lwip_stats.
  */
 #define LWIP_STATS                      0
-/*
-   ---------------------------------
-   ---------- PPP options ----------
-   ---------------------------------
-*/
-/**
- * PPP_SUPPORT==1: Enable PPP.
- */
-#define PPP_SUPPORT                     0
-
-
 
 /*
    ---------------------------------------
