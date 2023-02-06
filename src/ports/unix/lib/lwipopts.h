@@ -257,6 +257,11 @@ void *hev_calloc (size_t nmemb, size_t size);
  */
 #define IP_DEFAULT_TTL                  255
 
+/*
+   ---------------------------------------
+   ---------- IPv6 options ---------------
+   ---------------------------------------
+*/
 /**
  * LWIP_IPV6==1: Enable IPv6 module.
  */
