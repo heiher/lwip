@@ -371,7 +371,7 @@ void *hev_calloc (size_t nmemb, size_t size);
  * when opening a connection. For the transmit size, this MSS sets
  * an upper limit on the MSS advertised by the remote host.
  */
-#define TCP_MSS                         2048
+#define TCP_MSS                         8191
 
 /**
  * TCP_WND: The size of a TCP window.  This must be at least
@@ -380,13 +380,13 @@ void *hev_calloc (size_t nmemb, size_t size);
  * with scaling applied. Maximum window value in the TCP header
  * will be TCP_WND >> TCP_RCV_SCALE
  */
-#define TCP_WND                         (16 * TCP_MSS)
+#define TCP_WND                         (8 * TCP_MSS)
 
 /**
  * TCP_SND_BUF: TCP sender buffer space (bytes).
  * To achieve good performance, this should be at least 2 * TCP_MSS.
  */
-#define TCP_SND_BUF                     (16 * TCP_MSS)
+#define TCP_SND_BUF                     (8 * TCP_MSS)
 
 /**
  * TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
