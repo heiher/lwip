@@ -103,7 +103,7 @@ void *hev_calloc (size_t nmemb, size_t size);
  * If the application sends a lot of data out of ROM (or other static memory),
  * this should be set high.
  */
-#define MEMP_NUM_PBUF                   16
+#define MEMP_NUM_PBUF                   8192
 
 /**
  * MEMP_NUM_RAW_PCB: Number of raw connection PCBs
