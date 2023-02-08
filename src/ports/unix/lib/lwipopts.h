@@ -443,7 +443,7 @@ void *hev_calloc (size_t nmemb, size_t size);
 /**
  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
  */
-#define LWIP_SOCKET                     1
+#define LWIP_SOCKET                     0
 
 /**
  * SO_REUSE==1: Enable SO_REUSEADDR
