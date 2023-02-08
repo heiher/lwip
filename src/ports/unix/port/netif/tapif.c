@@ -352,12 +352,12 @@ tapif_init(struct netif *netif)
 
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;
-#if LWIP_IPV4
+#if LWIP_IPV4 && LWIP_ARP
   netif->output = etharp_output;
-#endif /* LWIP_IPV4 */
-#if LWIP_IPV6
+#endif /* LWIP_IPV4 && LWIP_ARP */
+#if LWIP_IPV6 && LWIP_ARP
   netif->output_ip6 = ethip6_output;
-#endif /* LWIP_IPV6 */
+#endif /* LWIP_IPV6 && LWIP_ARP */
   netif->linkoutput = low_level_output;
   netif->mtu = 1500;
 
