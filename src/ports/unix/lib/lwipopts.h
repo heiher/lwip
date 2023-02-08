@@ -195,7 +195,7 @@ void *hev_calloc (size_t nmemb, size_t size);
 /**
  * LWIP_ARP==1: Enable ARP functionality.
  */
-#define LWIP_ARP                        1
+#define LWIP_ARP                        0
 
 /*
    --------------------------------
