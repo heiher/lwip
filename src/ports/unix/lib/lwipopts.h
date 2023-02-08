@@ -62,7 +62,7 @@
  * NO_SYS==1: Provides VERY minimal functionality. Otherwise,
  * use lwIP facilities.
  */
-#define NO_SYS                          0
+#define NO_SYS                          1
 
 /*
    ------------------------------------
