@@ -80,6 +80,16 @@
 /** array of ((siostruct*)netif->state)->sio structs */
 static sio_status_t statusar[4];
 
+static int run_command(const char *command) {
+  int res = -1;
+
+#ifndef __APPLE__
+  res = system(command);
+#endif
+
+  return res;
+}
+
 #if ! (PPP_SUPPORT || LWIP_HAVE_SLIPIF)
 /* --private-functions----------------------------------------------------------------- */
 /** 
@@ -435,8 +445,8 @@ sio_fd_t sio_open(u8_t devnum)
 		snprintf(buf, sizeof(buf),
 			"/sbin/ifconfig sl0 mtu %d %s pointopoint %s up",
 			SLIP_MAX_SIZE, "192.168.2.1", "192.168.2.2");
-		LWIP_DEBUGF(SIO_DEBUG, ("sio_open[%d]: system(\"%s\");\n", siostate->fd, buf));
-		ret = system(buf);
+		LWIP_DEBUGF(SIO_DEBUG, ("sio_open[%d]: run_command(\"%s\");\n", siostate->fd, buf));
+		ret = run_command(buf);
 		if (ret < 0) {
 		    perror("ifconfig failed");
 		    exit(1);
