@@ -110,6 +110,16 @@ static void tapif_thread(void *arg);
 #endif /* !NO_SYS */
 
 /*-----------------------------------------------------------------------------------*/
+static int run_command(const char *command) {
+  int res = -1;
+
+#ifndef __APPLE__
+  res = system(command);
+#endif
+
+  return res;
+}
+
 static void
 low_level_init(struct netif *netif)
 {
@@ -185,8 +195,8 @@ low_level_init(struct netif *netif)
 #endif /* NETMASK_ARGS */
              );
 
-    LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_init: system(\"%s\");\n", buf));
-    ret = system(buf);
+    LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_init: run_command(\"%s\");\n", buf));
+    ret = run_command(buf);
     if (ret < 0) {
       perror("ifconfig failed");
       exit(1);
