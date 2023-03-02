@@ -1,4 +1,4 @@
-# Copyright (C) 2018 The Android Open Source Project
+# Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ include $(LOCAL_PATH)/build.mk
 LOCAL_MODULE    := liblwip
 LOCAL_SRC_FILES := $(patsubst $(SRCDIR)/%,src/%,$(SRCFILES))
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/include/ports/unix
-LOCAL_CFLAGS += -fvisibility=hidden -DFD_SET_DEFINED -DSOCKLEN_T_DEFINED
+LOCAL_CFLAGS += -DFD_SET_DEFINED -DSOCKLEN_T_DEFINED
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
 LOCAL_CFLAGS += -mfpu=neon
 endif

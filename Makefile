@@ -17,7 +17,7 @@ BUILDDIR=build
 STATIC_TARGET=$(BINDIR)/lib$(PROJECT).a
 SHARED_TARGET=$(BINDIR)/lib$(PROJECT).so
 
-$(SHARED_TARGET) : CCFLAGS+=-fPIC -fvisibility=hidden
+$(SHARED_TARGET) : CCFLAGS+=-fPIC
 $(SHARED_TARGET) : LDFLAGS+=-shared -pthread
 
 -include build.mk
