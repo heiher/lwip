@@ -47,6 +47,26 @@
 #include <sys/signal.h>
 #include <sys/types.h>
 
+#ifndef B57600
+#define B57600 57600
+#endif
+
+#ifndef B115200
+#define B115200 115200
+#endif
+
+#ifndef CRTS_IFLOW
+#define CRTS_IFLOW 0x00020000
+#endif
+
+#ifndef CCTS_OFLOW
+#define CCTS_OFLOW 0x00010000
+#endif
+
+#ifndef CRTSCTS
+#define CRTSCTS (CCTS_OFLOW | CRTS_IFLOW)
+#endif
+
 #ifndef LWIP_HAVE_SLIPIF
 #define LWIP_HAVE_SLIPIF 1
 #endif
