@@ -48,7 +48,12 @@
 #include <sys/types.h>
 
 #ifndef LWIP_HAVE_SLIPIF
-#define LWIP_HAVE_SLIPIF 0
+#define LWIP_HAVE_SLIPIF 1
+#endif
+
+/** Maximum packet size that is received by this netif */
+#ifndef SLIP_MAX_SIZE
+#define SLIP_MAX_SIZE 1500
 #endif
 
 #if (PPP_SUPPORT || LWIP_HAVE_SLIPIF) && defined(LWIP_UNIX_LINUX)
@@ -323,6 +328,11 @@ u32_t sio_read(sio_status_t * siostat, u8_t *buf, u32_t size)
 {
     ssize_t rsz = read( siostat->fd, buf, size );
     return rsz < 0 ? 0 : rsz;
+}
+
+u32_t sio_tryread(sio_fd_t fd, u8_t *data, u32_t len)
+{
+    return -1;
 }
 
 void sio_read_abort(sio_status_t * siostat)
