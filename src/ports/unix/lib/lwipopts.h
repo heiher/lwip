@@ -40,7 +40,7 @@
 
 /*
  * Include user defined options first. Anything not defined in these files
- * will be set to standard values. Override anything you dont like!
+ * will be set to standard values. Override anything you don't like!
  */
 #include "lwipopts.h"
 #include "lwip/debug.h"
@@ -408,7 +408,7 @@ void *hev_calloc (size_t nmemb, size_t size);
 
 /**
  * PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. The default is
- * designed to accomodate single full size TCP frame in one pbuf, including
+ * designed to accommodate single full size TCP frame in one pbuf, including
  * TCP_MSS, IP header, and link header.
 *
  */
@@ -508,15 +508,6 @@ void *hev_calloc (size_t nmemb, size_t size);
 #if !NO_SYS
 void sys_check_core_locking(void);
 #define LWIP_ASSERT_CORE_LOCKED()  sys_check_core_locking()
-void sys_mark_tcpip_thread(void);
-#define LWIP_MARK_TCPIP_THREAD()   sys_mark_tcpip_thread()
-
-#if LWIP_TCPIP_CORE_LOCKING
-void sys_lock_tcpip_core(void);
-#define LOCK_TCPIP_CORE()          sys_lock_tcpip_core()
-void sys_unlock_tcpip_core(void);
-#define UNLOCK_TCPIP_CORE()        sys_unlock_tcpip_core()
-#endif
 #endif
 
 #endif /* LWIP_LWIPOPTS_H */
