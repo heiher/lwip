@@ -67,7 +67,7 @@ extern unsigned int lwip_port_rand(void);
   handler;}} while(0)
 #endif
 
-#if defined(LWIP_UNIX_ANDROID) && defined(FD_SET)
+#if defined(LWIP_UNIX_ANDROID) && defined(FD_SET) && !defined(FD_SET_DEFINED)
 typedef __kernel_fd_set fd_set;
 #endif
 
