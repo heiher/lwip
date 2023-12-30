@@ -44,6 +44,9 @@
  *    will block until there is more room instead of just
  *    leaking messages.
  */
+
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #define _GNU_SOURCE /* pull in pthread_setname_np() on Linux */
 
 #include "lwip/debug.h"
@@ -838,3 +841,5 @@ lwip_unix_keypressed(void)
   return select(1, &fds, NULL, NULL, &tv);
 }
 #endif /* !NO_SYS */
+
+#endif /* !defined(_WIN32) && !defined(_WIN64) */

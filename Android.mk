@@ -20,7 +20,7 @@ include $(CLEAR_VARS)
 include $(LOCAL_PATH)/build.mk
 LOCAL_MODULE    := liblwip
 LOCAL_SRC_FILES := $(patsubst $(SRCDIR)/%,src/%,$(SRCFILES))
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/include/ports/unix
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/include/ports
 LOCAL_CFLAGS += -DFD_SET_DEFINED -DSOCKLEN_T_DEFINED
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
 LOCAL_CFLAGS += -mfpu=neon

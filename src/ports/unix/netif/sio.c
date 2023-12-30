@@ -1,5 +1,7 @@
 /* Author: Magnus Ivarsson <magnus.ivarsson@volvo.com> */
 
+#if !defined(_WIN32) && !defined(_WIN64)
+
 /* to get rid of implicit function declarations */
 #define _XOPEN_SOURCE 600
 #define _GNU_SOURCE
@@ -527,3 +529,4 @@ void sio_change_baud( sioBaudrates baud, sio_status_t * siostat )
 	}
 }
 
+#endif /* !defined(_WIN32) && !defined(_WIN64) */

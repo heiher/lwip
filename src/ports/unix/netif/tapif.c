@@ -30,6 +30,8 @@
  *
  */
 
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -440,3 +442,5 @@ tapif_thread(void *arg)
 }
 
 #endif /* NO_SYS */
+
+#endif /* !defined(_WIN32) && !defined(_WIN64) */

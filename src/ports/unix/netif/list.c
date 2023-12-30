@@ -30,7 +30,7 @@
  *
  */
 
-
+#if !defined(_WIN32) && !defined(_WIN64)
 
 #include <stdlib.h>
 #include <netif/list.h>
@@ -150,3 +150,5 @@ list_map(struct list *list, void (* func)(void *arg))
   }
 }
 /*-----------------------------------------------------------------------------------*/
+
+#endif /* !defined(_WIN32) && !defined(_WIN64) */

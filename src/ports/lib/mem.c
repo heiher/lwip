@@ -9,7 +9,11 @@
 
 #include <stdlib.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#define WEAK
+#else
 #define WEAK __attribute__((weak))
+#endif
 
 WEAK void
 hev_free (void *ptr)

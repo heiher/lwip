@@ -30,6 +30,8 @@
  *
  */
 
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #if !defined(linux) && !defined(__MACH__)  /* Apparently, this doesn't work under Linux and MacOS. */
 
 #include "lwip/debug.h"
@@ -205,3 +207,5 @@ pcapif_init(struct netif *netif)
 }
 /*-----------------------------------------------------------------------------------*/
 #endif /* linux & macos */
+
+#endif /* !defined(_WIN32) && !defined(_WIN64) */

@@ -3,6 +3,9 @@
 /* ---------------------------------------------- */
 /* --- fifo 4 unix ------------------------------ */
 /* ---------------------------------------------- */
+
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #include "lwip/err.h"
 #include "netif/fifo.h"
 #include "lwip/debug.h"
@@ -137,3 +140,5 @@ void fifoInit(fifo_t * fifo)
   }
   fifo->getWaiting = FALSE;
 }
+
+#endif /* !defined(_WIN32) && !defined(_WIN64) */

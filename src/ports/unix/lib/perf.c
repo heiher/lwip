@@ -30,6 +30,8 @@
  *
  */
 
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #include "arch/perf.h"
 
 #include <stdio.h>
@@ -63,3 +65,4 @@ perf_init(char *fname)
   f = fopen(fname, "w");  
 }
 	
+#endif /* !defined(_WIN32) && !defined(_WIN64) */
