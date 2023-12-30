@@ -121,6 +121,13 @@ git clone https://gitlab.com/hev/lwip jni
 ndk-build
 ```
 
+**Windows**:
+```bash
+git clone https://gitlab.com/hev/lwip
+cd lwip
+make CROSS_PREFIX=x86_64-w64-mingw32-
+```
+
 ## Upstream
 https://savannah.nongnu.org/projects/lwip
 
