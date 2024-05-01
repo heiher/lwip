@@ -122,7 +122,7 @@ void *hev_calloc (size_t nmemb, size_t size);
  * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
  * (requires the LWIP_TCP option)
  */
-#define MEMP_NUM_TCP_PCB                1024
+#define MEMP_NUM_TCP_PCB                4096
 
 /**
  * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.
