@@ -21,7 +21,7 @@ $(SHARED_TARGET) : CCFLAGS+=-fPIC
 $(SHARED_TARGET) : LDFLAGS+=-shared -pthread
 
 -include build.mk
-CCFLAGS+=-Iinclude -Iinclude/ports
+CCFLAGS+=-Isrc/include -Isrc/ports/include
 
 CCSRCS=$(filter %.c,$(SRCFILES))
 ASSRCS=$(filter %.S,$(SRCFILES))
