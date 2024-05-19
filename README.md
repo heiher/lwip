@@ -1,7 +1,5 @@
 # LwIP
 
-[![status][PIPELINE_STATUS]][PROJECT_URL]
-
 This is a branch of liblwip with a simple build system.
 
 ## Features
