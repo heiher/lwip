@@ -1,5 +1,7 @@
 # LwIP
 
+[![status](https://github.com/heiher/lwip/actions/workflows/build.yaml/badge.svg?branch=master&event=push)](https://github.com/heiher/lwip)
+
 This is a branch of liblwip with a simple build system.
 
 ## Features
