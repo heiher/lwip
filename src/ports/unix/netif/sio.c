@@ -12,6 +12,9 @@
    are included */
 #if defined(__APPLE__)
 #define _DARWIN_C_SOURCE
+#include <Availability.h>
+#include <AvailabilityMacros.h>
+#include <TargetConditionals.h>
 #endif
 
 #include "netif/sio.h"
@@ -453,17 +456,23 @@ sio_fd_t sio_open(u8_t devnum)
 	    LWIP_DEBUGF(SIO_DEBUG, ("sio_open[%d]: for %s\n",
 		    siostate->fd, ptsname(siostate->fd)));
 	    /* fork for slattach */
+#ifndef TARGET_OS_TV
 	    childpid = fork();
+#else
+		childpid = -1;
+#endif
 	    if(childpid < 0) {
 		perror("fork");
 		exit (1);
 	    }
 	    if(childpid == 0) {
+#ifndef TARGET_OS_TV
 		/* esteblish SLIP interface on host side connected to PTY slave */
 		execl("/sbin/slattach", "slattach",
 			"-d", "-v", "-L", "-p", "slip",
 			ptsname(siostate->fd),
 			NULL);
+#endif
 		perror("execl slattach");
 		exit (1);
 	    } else {
