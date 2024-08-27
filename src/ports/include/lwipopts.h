@@ -64,6 +64,14 @@
  */
 #define NO_SYS                          1
 
+/**
+ * LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS: Don't provides byte order
+ * functions.
+ */
+#ifndef LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS
+#define LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS
+#endif
+
 /*
    ------------------------------------
    ---------- Memory options ----------

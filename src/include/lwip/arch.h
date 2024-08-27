@@ -64,7 +64,7 @@
  * Allowed values: LITTLE_ENDIAN and BIG_ENDIAN
  */
 #ifndef BYTE_ORDER
-#define BYTE_ORDER LITTLE_ENDIAN
+#define BYTE_ORDER __BYTE_ORDER__
 #endif
 
 /** Define random number generator function of your system */
