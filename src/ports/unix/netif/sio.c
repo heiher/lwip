@@ -49,7 +49,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
-#include <sys/signal.h>
 #include <sys/types.h>
 
 #ifndef B57600
