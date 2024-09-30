@@ -34,6 +34,11 @@ LINKMSG="\e[1;34mLINK\e[0m  \e[1;32m%s\e[0m\n"
 CLEANMSG="\e[1;34mCLEAN\e[0m %s\n"
 TESTMSG="\e[1;34mTEST\e[0m  \e[1;32m%s\e[0m\n"
 
+ENABLE_DEBUG :=
+ifeq ($(ENABLE_DEBUG),1)
+	CCFLAGS+=-g -O0 -DENABLE_DEBUG
+endif
+
 V:=
 ECHO_PREFIX:=@
 ifeq ($(V),1)
