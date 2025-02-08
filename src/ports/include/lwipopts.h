@@ -86,20 +86,20 @@
 #define MEM_ALIGNMENT                   4U
 
 /**
- * MEM_LIBC_MALLOC==1: Use malloc/free/realloc provided by your C-library
- * instead of the lwip internal allocator. Can save code size if you
- * already use it.
+ * MEM_CUSTOM_ALLOCATOR==1: Use malloc/free/realloc provided by a custom
+ * implementation instead of the lwip internal allocator. Can save code size if
+ * you already use it. If enabled, you have to define those functions:
  */
-#define MEM_LIBC_MALLOC                 1
+#define MEM_CUSTOM_ALLOCATOR            1
 
 void hev_free (void *ptr);
-#define mem_clib_free hev_free
+#define MEM_CUSTOM_FREE hev_free
 
 void *hev_malloc (size_t size);
-#define mem_clib_malloc hev_malloc
+#define MEM_CUSTOM_MALLOC hev_malloc
 
 void *hev_calloc (size_t nmemb, size_t size);
-#define mem_clib_calloc hev_calloc
+#define MEM_CUSTOM_CALLOC hev_calloc
 
 /*
    ------------------------------------------------
