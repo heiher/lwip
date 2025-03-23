@@ -465,7 +465,7 @@ again:
           npcb->pretend_netif_idx = pcb->pretend_netif_idx;
           npcb->next = udp_pcbs;
           udp_pcbs = npcb;
-          pcb->recv(pcb->recv_arg, npcb, NULL, NULL, 0);
+          pcb->recv(pcb->recv_arg, npcb, p, ip_current_dest_addr(), dest);
           goto again;
         }
         break;
