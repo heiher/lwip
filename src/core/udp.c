@@ -411,19 +411,9 @@ again:
       if (pcb->recv != NULL) {
         /* now the recv function is responsible for freeing p */
         if (pcb->pretend_netif_idx != NETIF_NO_INDEX) {
-          ip_addr_t addr;
-          u16_t port;
-
-          ip_addr_set_ipaddr(&addr, &pcb->local_ip);
-          port = pcb->local_port;
-
           ip_addr_set_ipaddr(&pcb->local_ip, ip_current_dest_addr());
           pcb->local_port = dest;
-
           pcb->recv(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
-
-          ip_addr_set_ipaddr(&pcb->local_ip, &addr);
-          pcb->local_port = port;
         } else {
           pcb->recv(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
         }
