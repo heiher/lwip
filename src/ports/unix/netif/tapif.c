@@ -395,7 +395,11 @@ tapif_select(struct netif *netif)
   int ret;
   struct timeval tv;
   struct tapif *tapif;
+#if LWIP_TIMERS
   u32_t msecs = sys_timeouts_sleeptime();
+#else
+  u32_t msecs = -1;
+#endif /* LWIP_TIMERS */
 
   tapif = (struct tapif *)netif->state;
 

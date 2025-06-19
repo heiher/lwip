@@ -91,6 +91,7 @@ struct zepif_state {
   u32_t seqno;
 };
 
+#if LWIP_TIMERS
 static u8_t zep_lowpan_timer_running;
 
 /* Helper function that calls the 6LoWPAN timer and reschedules itself */
@@ -102,6 +103,7 @@ zep_lowpan_timer(void *arg)
     sys_timeout(LOWPAN6_TMR_INTERVAL, zep_lowpan_timer, arg);
   }
 }
+#endif /* LWIP_TIMERS */
 
 /* Pass received pbufs into 6LowPAN netif */
 static void
@@ -281,10 +283,12 @@ zepif_init(struct netif *netif)
     }
     netif->linkoutput = zepif_linkoutput;
 
+#if LWIP_TIMERS
     if (!zep_lowpan_timer_running) {
       sys_timeout(LOWPAN6_TMR_INTERVAL, zep_lowpan_timer, NULL);
       zep_lowpan_timer_running = 1;
     }
+#endif /* LWIP_TIMERS */
 
     return ERR_OK;
   }

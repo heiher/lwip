@@ -175,6 +175,7 @@ bridgeif_fdb_age_one_second(void *fdb_ptr)
   BRIDGEIF_READ_UNPROTECT(lev);
 }
 
+#if LWIP_TIMERS
 /** Timer callback for fdb aging, called once per second */
 static void
 bridgeif_age_tmr(void *arg)
@@ -186,6 +187,7 @@ bridgeif_age_tmr(void *arg)
   bridgeif_fdb_age_one_second(fdb);
   sys_timeout(BRIDGEIF_AGE_TIMER_MS, bridgeif_age_tmr, arg);
 }
+#endif /* LWIP_TIMERS */
 
 /**
  * @ingroup bridgeif_fdb
@@ -206,7 +208,9 @@ bridgeif_fdb_init(u16_t max_fdb_entries)
   fdb->max_fdb_entries = max_fdb_entries;
   fdb->fdb = (bridgeif_dfdb_entry_t *)(fdb + 1);
 
+#if LWIP_TIMERS
   sys_timeout(BRIDGEIF_AGE_TIMER_MS, bridgeif_age_tmr, fdb);
+#endif /* LWIP_TIMERS */
 
   return fdb;
 }

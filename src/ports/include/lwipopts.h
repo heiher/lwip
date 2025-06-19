@@ -65,6 +65,13 @@
 #define NO_SYS                          1
 
 /**
+ * LWIP_TIMERS==0: Drop support for sys_timeout and lwip-internal cyclic timers.
+ * (the array of lwip-internal cyclic timers is still provided)
+ * (check NO_SYS_NO_TIMERS for compatibility to old versions)
+ */
+#define LWIP_TIMERS                     0
+
+/**
  * LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS: Don't provides byte order
  * functions.
  */
