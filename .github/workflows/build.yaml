@@ -94,6 +94,24 @@ jobs:
         run: |
           make
 
+  freebsd:
+    name: FreeBSD
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: true
+      - name: Build
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y gmake gcc
+          run: |
+            gmake
+
   android:
     name: Android
     runs-on: ubuntu-latest
