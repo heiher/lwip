@@ -59,6 +59,7 @@ extern "C" {
 
 /* Lower layer interface to TCP: */
 void             tcp_init    (void);  /* Initialize this module. */
+void             tcp_fini    (void);  /* Free all pcbs. */
 void             tcp_tmr     (void);  /* Must be called every
                                          TCP_TMR_INTERVAL
                                          ms. (Typically 250 ms). */

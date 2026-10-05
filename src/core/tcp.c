@@ -205,6 +205,38 @@ tcp_init(void)
 #endif /* LWIP_RAND */
 }
 
+/**
+ * Free all pcbs without calling any callbacks.
+ */
+void
+tcp_fini(void)
+{
+  struct tcp_pcb *pcb;
+  size_t i;
+
+  for (i = 1; i < LWIP_ARRAYSIZE(tcp_pcb_lists); i++) {
+    while ((pcb = *tcp_pcb_lists[i]) != NULL) {
+      *tcp_pcb_lists[i] = pcb->next;
+      tcp_segs_free(pcb->unsent);
+      tcp_segs_free(pcb->unacked);
+#if TCP_QUEUE_OOSEQ
+      tcp_segs_free(pcb->ooseq);
+#endif /* TCP_QUEUE_OOSEQ */
+      if (pcb->refused_data != NULL) {
+        pbuf_free(pcb->refused_data);
+      }
+      memp_free(MEMP_TCP_PCB, pcb);
+    }
+  }
+
+  while ((pcb = tcp_listen_pcbs.pcbs) != NULL) {
+    tcp_listen_pcbs.pcbs = pcb->next;
+    memp_free(MEMP_TCP_PCB_LISTEN, pcb);
+  }
+
+  tcp_active_pcbs_changed = 0;
+}
+
 /** Free a tcp pcb */
 void
 tcp_free(struct tcp_pcb *pcb)
