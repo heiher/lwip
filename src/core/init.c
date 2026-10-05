@@ -394,7 +394,17 @@ lwip_init(void)
 
 /**
  * @ingroup lwip_nosys
- * Release the global state of all modules.
+ * Release the global state of all modules, so that lwip_init() can be
+ * called again in the same process.
+ *
+ * Before calling it, remove all netifs with netif_remove() and close or
+ * remove the application's own pcbs. Call it only when the stack is no
+ * longer running (NO_SYS=1, or the tcpip thread has stopped) and never
+ * from an lwIP callback.
+ *
+ * Remaining pcbs, pending timeouts, IP reassembly buffers and DNS requests
+ * are freed without calling application callbacks (tcp ext_args destroy
+ * callbacks included) and without sending anything.
  */
 void
 lwip_fini(void)
@@ -405,6 +415,9 @@ lwip_fini(void)
 #if LWIP_TCP
   tcp_fini();
 #endif /* LWIP_TCP */
+#if LWIP_DNS
+  dns_fini();
+#endif /* LWIP_DNS */
 #if LWIP_UDP
   udp_fini();
 #endif /* LWIP_UDP */
