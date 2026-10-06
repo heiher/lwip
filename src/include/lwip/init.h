@@ -93,16 +93,6 @@ extern "C" {
 /* Modules initialization */
 void lwip_init(void);
 
-/**
- * Release the global state of all modules, so that lwip_init() can be
- * called again in the same process.
- *
- * All remaining pcbs, pending timeouts and IP reassembly buffers are freed
- * without calling any application callbacks and without sending anything.
- * Network interfaces are not removed, only forgotten. Pcb pointers held
- * by the application are invalid after this call, so close or remove your
- * own pcbs and netifs before calling it.
- */
 void lwip_fini(void);
 
 #ifdef __cplusplus
