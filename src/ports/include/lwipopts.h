@@ -108,6 +108,15 @@ void *hev_malloc (size_t size);
 void *hev_calloc (size_t nmemb, size_t size);
 #define MEM_CUSTOM_CALLOC hev_calloc
 
+/**
+ * MEMP_MEM_MALLOC==1: Use mem_malloc/mem_free instead of the lwip pool allocator.
+ * Especially useful with MEM_LIBC_MALLOC but handle with care regarding execution
+ * speed (heap alloc can be much slower than pool alloc) and usage from interrupts
+ * (especially if your netif driver allocates PBUF_POOL pbufs for received frames
+ * from interrupt)!
+ */
+#define MEMP_MEM_MALLOC                 1
+
 /*
    ------------------------------------------------
    ---------- Internal Memory Pool Sizes ----------
