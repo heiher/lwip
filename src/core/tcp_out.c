@@ -410,6 +410,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
   u16_t concat_chksum = 0;
   u8_t concat_chksum_swapped = 0;
   u16_t concat_chksummed = 0;
+  u8_t chksum_nocopy = 1;
 #endif /* TCP_CHECKSUM_ON_COPY */
   err_t err;
   u16_t mss_local;
@@ -419,6 +420,12 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
   /* don't allocate segments bigger than half the maximum window we ever received */
   mss_local = LWIP_MIN(pcb->mss, TCPWND_MIN16(pcb->snd_wnd_max / 2));
   mss_local = mss_local ? mss_local : pcb->mss;
+
+#if TCP_CHECKSUM_ON_COPY && LWIP_CHECKSUM_CTRL_PER_NETIF
+  /* don't checksum nocopy-data if the netif doesn't generate TCP checksums */
+  chksum_nocopy = NETIF_CHECKSUM_ENABLED(netif_get_by_index(pcb->netif_idx),
+                                         NETIF_CHECKSUM_GEN_TCP);
+#endif /* TCP_CHECKSUM_ON_COPY && LWIP_CHECKSUM_CTRL_PER_NETIF */
 
   LWIP_ASSERT_CORE_LOCKED();
 
@@ -574,10 +581,12 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
           queuelen += pbuf_clen(concat_p);
         }
 #if TCP_CHECKSUM_ON_COPY
-        /* calculate the checksum of nocopy-data */
-        tcp_seg_add_chksum(~inet_chksum((const u8_t *)arg + pos, seglen), seglen,
-                           &concat_chksum, &concat_chksum_swapped);
-        concat_chksummed += seglen;
+        if (chksum_nocopy) {
+          /* calculate the checksum of nocopy-data */
+          tcp_seg_add_chksum(~inet_chksum((const u8_t *)arg + pos, seglen), seglen,
+                             &concat_chksum, &concat_chksum_swapped);
+          concat_chksummed += seglen;
+        }
 #endif /* TCP_CHECKSUM_ON_COPY */
       }
 
@@ -632,11 +641,13 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
         goto memerr;
       }
 #if TCP_CHECKSUM_ON_COPY
-      /* calculate the checksum of nocopy-data */
-      chksum = ~inet_chksum((const u8_t *)arg + pos, seglen);
-      if (seglen & 1) {
-        chksum_swapped = 1;
-        chksum = SWAP_BYTES_IN_WORD(chksum);
+      if (chksum_nocopy) {
+        /* calculate the checksum of nocopy-data */
+        chksum = ~inet_chksum((const u8_t *)arg + pos, seglen);
+        if (seglen & 1) {
+          chksum_swapped = 1;
+          chksum = SWAP_BYTES_IN_WORD(chksum);
+        }
       }
 #endif /* TCP_CHECKSUM_ON_COPY */
       /* reference the non-volatile payload data */
