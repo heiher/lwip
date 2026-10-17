@@ -1,2 +1,5 @@
 bin
 build
+
+# Native MSVC output directory (scripts live at the project root)
+/build-msvc/

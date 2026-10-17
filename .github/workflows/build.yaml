@@ -145,3 +145,68 @@ jobs:
       - name: Build
         run: |
           make CC=clang ENABLE_STATIC=1 -j`nproc`
+
+  windows-msvc:
+    name: Windows native MSVC x64
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          submodules: true
+      - name: Compile native MSVC library
+        shell: pwsh
+        run: |
+          & .\build-msvc.ps1 -Target lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      # Static check: every library member must be machine 8664.
+      - name: Verify machine types
+        shell: pwsh
+        run: |
+          & .\build-msvc.ps1 -Target verify
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  windows-msvc-x86:
+    name: Windows native MSVC x86
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          submodules: true
+      - name: Compile native MSVC library
+        shell: pwsh
+        run: |
+          & .\build-msvc.ps1 -Target lib -Arch x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      # Static check: every library member must be machine 14C.
+      - name: Verify machine types
+        shell: pwsh
+        run: |
+          & .\build-msvc.ps1 -Target verify -Arch x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  windows-msvc-arm64:
+    name: Windows native MSVC ARM64 (cross compile)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          submodules: true
+      # Cross-compiles genuine native ARM64 (x64_arm64, not ARM64EC) from the
+      # x64 runner.
+      - name: Compile native MSVC library
+        shell: pwsh
+        run: |
+          & .\build-msvc.ps1 -Target lib -Arch arm64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      # Static check: every library member must be machine AA64.
+      - name: Verify machine types
+        shell: pwsh
+        run: |
+          & .\build-msvc.ps1 -Target verify -Arch arm64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
