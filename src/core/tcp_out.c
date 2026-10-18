@@ -946,7 +946,7 @@ tcp_split_unsent_seg(struct tcp_pcb *pcb, u16_t split)
   successfully because we are modifying the original segment */
   pbuf_realloc(useg->p, useg->p->tot_len - remainder);
   useg->len -= remainder;
-  TCPH_SET_FLAG(useg->tcphdr, split_flags);
+  TCPH_FLAGS_SET(useg->tcphdr, split_flags);
 #if TCP_OVERSIZE_DBGCHECK
   /* By trimming, realloc may have actually shrunk the pbuf, so clear oversize_left */
   useg->oversize_left = 0;
@@ -1314,6 +1314,27 @@ tcp_output(struct tcp_pcb *pcb)
       return ERR_RTE;
     }
     ip_addr_copy(pcb->local_ip, *local_ip);
+  }
+
+  /* A GSO segment can exceed the peer's current window even when several
+   * wire-sized segments fit. Send those now instead of waiting for persist.
+   * An RTO may have requeued a partially acknowledged segment, so measure
+   * from its sequence number to the window edge, including the ACKed prefix.
+   */
+  if (pcb->gso_mss != 0 && pcb->unacked == NULL &&
+      lwip_ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len > wnd) {
+    u32_t seq = lwip_ntohl(seg->tcphdr->seqno);
+    u32_t edge = pcb->lastack + wnd;
+
+    if (TCP_SEQ_GT(edge, seq)) {
+      u32_t split = edge - seq;
+      split -= split % pcb->gso_mss;
+      if (split > 0 && split < seg->len &&
+          TCP_SEQ_GT(seq + split, pcb->lastack)) {
+        /* A failed allocation leaves the queue unchanged for the check below. */
+        tcp_split_unsent_seg(pcb, (u16_t)split);
+      }
+    }
   }
 
   /* Handle the current segment not fitting within the window */
