@@ -1240,6 +1240,45 @@ tcp_build_wnd_scale_option(u32_t *opts)
 }
 #endif
 
+/* A GSO segment can exceed the peer's current window even when several
+ * wire-sized segments fit. Split those off now instead of waiting for persist.
+ * An RTO may have requeued a partially acknowledged segment, so measure
+ * from its sequence number to the window edge, including the ACKed prefix.
+ * Data in flight does not matter: waiting for it to be acknowledged would
+ * leave the window idle for a round trip.
+ */
+static void
+tcp_output_gso_split(struct tcp_pcb *pcb, struct tcp_seg *seg, u32_t wnd)
+{
+  if (pcb->gso_mss != 0 &&
+      lwip_ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len > wnd) {
+    u32_t seq = lwip_ntohl(seg->tcphdr->seqno);
+    u32_t edge = pcb->lastack + wnd;
+
+    if (TCP_SEQ_GT(edge, seq)) {
+      u32_t split = edge - seq;
+      u32_t whole = split - split % pcb->gso_mss;
+
+      /* A peer with a small receive buffer may never offer a whole wire
+       * segment, and would then only advance on persist timer ticks. Once
+       * at least half a wire segment (or half the largest window it ever
+       * offered) is open, send the window as it is; smaller windows still
+       * wait for persist, so a nearly closed window gets no tiny segments.
+       */
+      if (whole == 0 && pcb->unacked == NULL && wnd == pcb->snd_wnd &&
+          (split >= pcb->gso_mss / 2 || split >= pcb->snd_wnd_max / 2)) {
+        whole = split;
+      }
+      split = whole;
+      if (split > 0 && split < seg->len &&
+          TCP_SEQ_GT(seq + split, pcb->lastack)) {
+        /* A failed allocation leaves the queue unchanged for the check below. */
+        tcp_split_unsent_seg(pcb, (u16_t)split);
+      }
+    }
+  }
+}
+
 /**
  * @ingroup tcp_raw
  * Find out what we can send and send it
@@ -1316,26 +1355,7 @@ tcp_output(struct tcp_pcb *pcb)
     ip_addr_copy(pcb->local_ip, *local_ip);
   }
 
-  /* A GSO segment can exceed the peer's current window even when several
-   * wire-sized segments fit. Send those now instead of waiting for persist.
-   * An RTO may have requeued a partially acknowledged segment, so measure
-   * from its sequence number to the window edge, including the ACKed prefix.
-   */
-  if (pcb->gso_mss != 0 && pcb->unacked == NULL &&
-      lwip_ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len > wnd) {
-    u32_t seq = lwip_ntohl(seg->tcphdr->seqno);
-    u32_t edge = pcb->lastack + wnd;
-
-    if (TCP_SEQ_GT(edge, seq)) {
-      u32_t split = edge - seq;
-      split -= split % pcb->gso_mss;
-      if (split > 0 && split < seg->len &&
-          TCP_SEQ_GT(seq + split, pcb->lastack)) {
-        /* A failed allocation leaves the queue unchanged for the check below. */
-        tcp_split_unsent_seg(pcb, (u16_t)split);
-      }
-    }
-  }
+  tcp_output_gso_split(pcb, seg, wnd);
 
   /* Handle the current segment not fitting within the window */
   if (lwip_ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len > wnd) {
@@ -1442,6 +1462,10 @@ tcp_output(struct tcp_pcb *pcb)
       tcp_seg_free(seg);
     }
     seg = pcb->unsent;
+    if (seg != NULL) {
+      /* The next GSO segment may only partly fit the window. */
+      tcp_output_gso_split(pcb, seg, wnd);
+    }
   }
 #if TCP_OVERSIZE
   if (pcb->unsent == NULL) {
