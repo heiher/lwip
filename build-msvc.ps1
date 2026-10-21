@@ -1,4 +1,4 @@
-﻿# Native MSVC x64 / x86 / ARM64 build; independent from the MSYS2 Makefile.
+﻿# Native Windows x64 / x86 / ARM64 build via clang-cl; independent from the MSYS2 Makefile.
 # PowerShell 5.1+: powershell -NoProfile -ExecutionPolicy Bypass -File .\build-msvc.ps1 -Target lib
 # CMD shortcut: build-msvc.bat -Target lib -Arch x86 -VSVersion 2022
 # Targets: lib (default), verify, clean.
@@ -53,10 +53,10 @@ function Assert-PeMachine([string]$Path, [string]$Expected) {
 
 function Initialize-MSVC {
     # A pre-configured matching-architecture Native Tools prompt is supported.
-    $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
+    $clang = Get-Command clang-cl.exe -ErrorAction SilentlyContinue
     $lib = Get-Command lib.exe -ErrorAction SilentlyContinue
     $dumpbin = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
-    if ($VSVersion -eq 'latest' -and $cl -and $lib -and $dumpbin -and
+    if ($VSVersion -eq 'latest' -and $clang -and $lib -and $dumpbin -and
         $env:VSCMD_ARG_TGT_ARCH -eq $Arch) { return }
 
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -120,7 +120,7 @@ function Initialize-MSVC {
         }
     }
     if ($env:VSCMD_ARG_TGT_ARCH -ne $Arch) { throw "Expected MSVC $Arch target environment." }
-    foreach ($name in @('cl.exe', 'lib.exe', 'dumpbin.exe')) {
+    foreach ($name in @('clang-cl.exe', 'lib.exe', 'dumpbin.exe')) {
         if (-not (Get-Command $name -ErrorAction SilentlyContinue)) { throw "$name not found in MSVC environment." }
     }
     Assert-CompilerTarget
@@ -135,7 +135,7 @@ function Assert-CompilerTarget {
     $tempBase = Join-Path ([IO.Path]::GetTempPath()) ('lwip-msvc-probe-' + [guid]::NewGuid().ToString('N'))
     try {
         Set-Content -LiteralPath "$tempBase.c" -Encoding Ascii -Value 'int lwip_msvc_probe(void){return 0;}'
-        Invoke-Native 'cl.exe' (@('/nologo', '/c', "/Fo$tempBase.obj", "$tempBase.c"))
+        Invoke-Native 'clang-cl.exe' (@('/nologo', '/c', "/Fo$tempBase.obj", "$tempBase.c"))
         $machines = Get-PeMachineTypes "$tempBase.obj"
         if (($machines | Where-Object { $_ -ne $MachineType }).Count -gt 0) {
             throw ("cl.exe produced machine type(s) {0} instead of {1}. " +
@@ -156,7 +156,9 @@ $Includes = @(
     "/I$Root\src\include", "/I$Root\src\ports\include"
 )
 $Cflags = @(
-    '/nologo', '/std:c11', '/O2', '/W3', '/MD'
+    '/nologo', '/std:c11', '/O2', '/W3', '/MD',
+    "--target=$(if ($Arch -eq 'x64') { 'x86_64-pc-windows-msvc' } elseif ($Arch -eq 'x86') { 'i686-pc-windows-msvc' } else { 'aarch64-pc-windows-msvc' })",
+    '-Wno-unused-command-line-argument'
 ) + $Includes + $CommonDefines
 
 function Build-Library {
@@ -176,7 +178,7 @@ function Build-Library {
         $rel = $src.FullName.Substring($Root.Length + 1) -replace '[\\/]', '_'
         $obj = Join-Path $ObjDir ($rel + '.obj')
         Write-Host "  CC  $rel"
-        Invoke-Native 'cl.exe' ($Cflags + @('/c', "/Fo$obj", $src.FullName))
+        Invoke-Native 'clang-cl.exe' ($Cflags + @('/c', "/Fo$obj", $src.FullName))
         $objects += $obj
     }
 
