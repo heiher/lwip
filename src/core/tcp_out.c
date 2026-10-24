@@ -493,8 +493,12 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 
     /* Usable space at the end of the last unsent segment */
     unsent_optlen = LWIP_TCP_OPT_LENGTH_SEGMENT(last_unsent->flags, pcb);
-    LWIP_ASSERT("mss_local is too small", mss_local >= last_unsent->len + unsent_optlen);
-    space = mss_local - (last_unsent->len + unsent_optlen);
+    /* The segment may be larger if GSO was turned off since. */
+    if (mss_local > last_unsent->len + unsent_optlen) {
+      space = mss_local - (last_unsent->len + unsent_optlen);
+    } else {
+      space = 0;
+    }
 
     /*
      * Phase 1: Copy data directly into an oversized pbuf.
@@ -509,9 +513,9 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
     LWIP_ASSERT("unsent_oversize mismatch (pcb vs. last_unsent)",
                 pcb->unsent_oversize == last_unsent->oversize_left);
 #endif /* TCP_OVERSIZE_DBGCHECK */
-    oversize = pcb->unsent_oversize;
+    /* Less than the oversize may fit if GSO was turned off since. */
+    oversize = LWIP_MIN(pcb->unsent_oversize, space);
     if (oversize > 0) {
-      LWIP_ASSERT("inconsistent oversize vs. space", oversize <= space);
       seg = last_unsent;
       oversize_used = LWIP_MIN(space, LWIP_MIN(oversize, len));
       pos += oversize_used;
@@ -1250,6 +1254,12 @@ tcp_build_wnd_scale_option(u32_t *opts)
 static void
 tcp_output_gso_split(struct tcp_pcb *pcb, struct tcp_seg *seg, u32_t wnd)
 {
+  /* GSO may have been turned off with GSO segments still queued. */
+  if (pcb->gso_mss == 0 && seg->len > pcb->mss) {
+    tcp_split_unsent_seg(pcb, pcb->mss);
+    return;
+  }
+
   if (pcb->gso_mss != 0 &&
       lwip_ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len > wnd) {
     u32_t seq = lwip_ntohl(seg->tcphdr->seqno);
@@ -1414,6 +1424,16 @@ tcp_output(struct tcp_pcb *pcb)
     }
 
     err = tcp_output_segment(seg, pcb, netif);
+    if (err == ERR_MEM && pcb->gso_mss != 0 && seg->len > pcb->gso_mss) {
+      /* The netif can't take a GSO segment (e.g. out of buffers), while
+       * wire-sized ones still fit. Retrying it as is may never succeed, so
+       * send wire-sized segments from now on. */
+      pcb->mss = pcb->gso_mss;
+      pcb->gso_mss = 0;
+      if (tcp_split_unsent_seg(pcb, pcb->mss) == ERR_OK) {
+        err = tcp_output_segment(seg, pcb, netif);
+      }
+    }
     if (err != ERR_OK) {
       /* segment could not be sent, for whatever reason */
       tcp_set_flags(pcb, TF_NAGLEMEMERR);
