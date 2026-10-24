@@ -420,6 +420,10 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
   /* don't allocate segments bigger than half the maximum window we ever received */
   mss_local = LWIP_MIN(pcb->mss, TCPWND_MIN16(pcb->snd_wnd_max / 2));
   mss_local = mss_local ? mss_local : pcb->mss;
+  /* GSO is off for a while, queue wire-sized segments. */
+  if (pcb->gso_off_timer > 0) {
+    mss_local = LWIP_MIN(mss_local, pcb->gso_mss);
+  }
 
 #if TCP_CHECKSUM_ON_COPY && LWIP_CHECKSUM_CTRL_PER_NETIF
   /* don't checksum nocopy-data if the netif doesn't generate TCP checksums */
@@ -1244,6 +1248,14 @@ tcp_build_wnd_scale_option(u32_t *opts)
 }
 #endif
 
+/* How long GSO stays off after the netif failed to take a GSO segment. The
+ * time doubles with each failure in a row, up to 64 times, so a netif that
+ * keeps failing (e.g. memory stays fragmented) isn't probed every second. */
+#ifndef TCP_GSO_RETRY_TICKS
+#define TCP_GSO_RETRY_TICKS (1000 / TCP_SLOW_INTERVAL)
+#endif
+#define TCP_GSO_RETRY_COUNT_MAX 7
+
 /* A GSO segment can exceed the peer's current window even when several
  * wire-sized segments fit. Split those off now instead of waiting for persist.
  * An RTO may have requeued a partially acknowledged segment, so measure
@@ -1255,8 +1267,8 @@ static void
 tcp_output_gso_split(struct tcp_pcb *pcb, struct tcp_seg *seg, u32_t wnd)
 {
   /* GSO may have been turned off with GSO segments still queued. */
-  if (pcb->gso_mss == 0 && seg->len > pcb->mss) {
-    tcp_split_unsent_seg(pcb, pcb->mss);
+  if (pcb->gso_off_timer > 0 && seg->len > pcb->gso_mss) {
+    tcp_split_unsent_seg(pcb, pcb->gso_mss);
     return;
   }
 
@@ -1427,10 +1439,12 @@ tcp_output(struct tcp_pcb *pcb)
     if (err == ERR_MEM && pcb->gso_mss != 0 && seg->len > pcb->gso_mss) {
       /* The netif can't take a GSO segment (e.g. out of buffers), while
        * wire-sized ones still fit. Retrying it as is may never succeed, so
-       * send wire-sized segments from now on. */
-      pcb->mss = pcb->gso_mss;
-      pcb->gso_mss = 0;
-      if (tcp_split_unsent_seg(pcb, pcb->mss) == ERR_OK) {
+       * send wire-sized segments for a while. */
+      if (pcb->gso_off_count < TCP_GSO_RETRY_COUNT_MAX) {
+        pcb->gso_off_count++;
+      }
+      pcb->gso_off_timer = TCP_GSO_RETRY_TICKS << (pcb->gso_off_count - 1);
+      if (tcp_split_unsent_seg(pcb, pcb->gso_mss) == ERR_OK) {
         err = tcp_output_segment(seg, pcb, netif);
       }
     }
@@ -1438,6 +1452,9 @@ tcp_output(struct tcp_pcb *pcb)
       /* segment could not be sent, for whatever reason */
       tcp_set_flags(pcb, TF_NAGLEMEMERR);
       return err;
+    }
+    if (pcb->gso_mss != 0 && seg->len > pcb->gso_mss) {
+      pcb->gso_off_count = 0;
     }
 #if TCP_OVERSIZE_DBGCHECK
     seg->oversize_left = 0;

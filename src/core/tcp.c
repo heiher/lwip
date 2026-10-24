@@ -1279,6 +1279,10 @@ tcp_slowtmr_start:
     pcb_remove = 0;
     pcb_reset = 0;
 
+    if (pcb->gso_off_timer > 0) {
+      pcb->gso_off_timer--;
+    }
+
     if (pcb->state == SYN_SENT && pcb->nrtx >= TCP_SYNMAXRTX) {
       ++pcb_remove;
       LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: max SYN retries reached\n"));
