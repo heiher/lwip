@@ -291,7 +291,10 @@ void *hev_calloc (size_t nmemb, size_t size);
  */
 #define LWIP_IPV6                       1
 
-#ifdef __LP64__
+/* struct ip6_reass_helper holds a pointer, so it no longer fits into the
+ * IPv6 fragment header on 64-bit targets.  MSVC (LLP64) does not define
+ * __LP64__, hence the explicit Windows/architecture checks. */
+#if defined(__LP64__) || defined(_WIN64) || defined(_M_X64) ||  defined(_M_ARM64)
 #define IPV6_FRAG_COPYHEADER            1
 #endif
 
