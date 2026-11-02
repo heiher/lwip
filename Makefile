@@ -25,7 +25,6 @@ SHARED_TARGET=$(BINDIR)/lib$(PROJECT).so
 # a POSIX sh.exe on PATH, e.g. Git for Windows:
 #   make ARCH=x64
 ifeq ($(OS),Windows_NT)
-ifeq ($(MSYSTEM),)
 WIN_NATIVE=1
 ARCH?=x64
 CROSS_TARGET_x64=x86_64
@@ -39,7 +38,6 @@ SHARED_TARGET=$(BINDIR)/$(PROJECT).dll
 SHARED_IMPLIB=$(BINDIR)/$(PROJECT).dll.lib
 CCFLAGS+=-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS \
          -D_WINSOCK_DEPRECATED_NO_WARNINGS -Wno-pragma-pack -Wno-empty-body
-endif
 endif
 
 ifneq ($(WIN_NATIVE),1)

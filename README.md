@@ -138,7 +138,7 @@ ndk-build
 ```bash
 git clone https://gitlab.com/hev/lwip
 cd lwip
-make CROSS_PREFIX=x86_64-w64-mingw32-
+make ARCH=x64  # or x86, arm64
 ```
 
 ## Upstream
