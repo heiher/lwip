@@ -143,6 +143,3 @@ make ARCH=x64  # or x86, arm64
 
 ## Upstream
 https://savannah.nongnu.org/projects/lwip
-
-[PROJECT_URL]: https://gitlab.com/hev/lwip/commits/main
-[PIPELINE_STATUS]: https://gitlab.com/hev/lwip/badges/main/pipeline.svg
