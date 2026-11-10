@@ -105,9 +105,11 @@ PACK_STRUCT_END
 #  include "arch/epstruct.h"
 #endif
 
+/* RFC 791 identifies a datagram by addresses, protocol and identification. */
 #define IP_ADDRESSES_AND_ID_MATCH(iphdrA, iphdrB)  \
   (ip4_addr_eq(&(iphdrA)->src, &(iphdrB)->src) && \
    ip4_addr_eq(&(iphdrA)->dest, &(iphdrB)->dest) && \
+   IPH_PROTO(iphdrA) == IPH_PROTO(iphdrB) && \
    IPH_ID(iphdrA) == IPH_ID(iphdrB)) ? 1 : 0
 
 /* global variables */
