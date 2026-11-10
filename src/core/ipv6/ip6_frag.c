@@ -293,7 +293,7 @@ ip6_reass_remove_oldest_datagram(struct ip6_reassdata *ipr, int pbufs_needed)
 struct pbuf *
 ip6_reass(struct pbuf *p)
 {
-  struct ip6_reassdata *ipr, *ipr_prev;
+  struct ip6_reassdata *ipr = NULL, *ipr_prev;
   struct ip6_reass_helper *iprh, *iprh_tmp, *iprh_prev=NULL;
   struct ip6_frag_hdr *frag_hdr;
   u16_t offset, len, start, end;
@@ -700,6 +700,12 @@ ip6_reass(struct pbuf *p)
   return NULL;
 
 nullreturn:
+  if ((ipr != NULL) && (ipr->p == NULL)) {
+    /* The first fragment was rejected: do not leave an empty datagram queued. */
+    LWIP_ASSERT("new datagram is first", reassdatagrams == ipr);
+    reassdatagrams = ipr->next;
+    memp_free(MEMP_IP6_REASSDATA, ipr);
+  }
   IP6_FRAG_STATS_INC(ip6_frag.drop);
   pbuf_free(p);
   return NULL;
